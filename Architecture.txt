@@ -1,0 +1,16 @@
+[ Scheduler / Trigger ]
+          |
+          v
+[ Query Engine ]
+( KQL / Azure Data Explorer )
+          |
+          v
+[ Event Processing Layer ]
+          |
+          +--------------------------+
+          |                          |
+          v                          v
+[ Notification Service ]     [ Work Item Integration ]
+          |                          |
+          v                          v
+[ Teams / Collaboration ]    [ Tracking System ]
