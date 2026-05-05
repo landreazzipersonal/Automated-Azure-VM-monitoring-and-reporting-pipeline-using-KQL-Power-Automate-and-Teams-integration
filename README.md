@@ -4,17 +4,17 @@ This project shows an automated monitoring solution for Azure Virtual Machines u
 
 The goal is to detect VM infrastructure events (such as live migrations) and generate automatic reports and alerts.
 
-###############################################
-azure-vm-monitoring-automation/
-│
-├── README.md
-├── flow/
-│   └── definition-sanitized.json
-├── queries/
-│   └── vm-live-migration.kql
-└── docs/
-    └── architecture.md
-###############################################
+###############################################<br>
+azure-vm-monitoring-automation/ <br>
+│<br>
+├── README.md<br>
+├── flow/<br>
+│   └── definition-sanitized.json<br>
+├── queries/<br>
+│   └── vm-live-migration.kql<br>
+└── docs/<br>
+    └── architecture.md<br>
+###############################################<br>
 
 ## What it does
 
