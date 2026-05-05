@@ -1,0 +1,111 @@
+{
+  "name": "vm-monitoring-automation",
+  "id": "/providers/Microsoft.Flow/flows/vm-monitoring-automation",
+  "type": "Microsoft.Flow/flows",
+  "properties": {
+    "apiId": "/providers/Microsoft.PowerApps/apis/shared_logicflows",
+    "displayName": "Daily VM Monitoring Report",
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "type": "SecureObject",
+          "defaultValue": {}
+        },
+        "$connections": {
+          "type": "Object",
+          "defaultValue": {}
+        }
+      },
+
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "schedule": {
+              "hours": ["7", "13", "19"],
+              "minutes": [0]
+            }
+          }
+        }
+      },
+
+      "actions": {
+
+        "Run_KQL_Query": {
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_kusto",
+              "connectionName": "shared_kusto",
+              "operationId": "listKustoResultsPost"
+            },
+            "parameters": {
+              "body/cluster": "https://<your-cluster>.kusto.windows.net",
+              "body/db": "<your-database>",
+              "body/csl": "let startTime = ago(6h); let endTime = now(); VMEvents | where TimeGenerated between (startTime .. endTime) | where EventType == 'LiveMigration' | project TimeGenerated, VMName, Region, Status, Duration, TriggerType, SourceNode, DestinationNode | sort by TimeGenerated desc"
+            }
+          }
+        },
+
+        "For_each_VM_Event": {
+          "type": "Foreach",
+          "foreach": "@outputs('Run_KQL_Query')?['body/value']",
+          "runAfter": {
+            "Run_KQL_Query": ["Succeeded"]
+          },
+          "actions": {
+
+            "Send_Teams_Notification": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_teams",
+                  "connectionName": "shared_teams",
+                  "operationId": "PostMessageToConversation"
+                },
+                "parameters": {
+                  "poster": "Flow bot",
+                  "location": "Channel",
+                  "body/recipient": "<teams-channel-id>",
+                  "body/messageBody": "<p>VM Event Detected</p><br>
+<p>
+Timestamp: @{items('For_each_VM_Event')?['TimeGenerated']}<br>
+VM Name: @{items('For_each_VM_Event')?['VMName']}<br>
+Region: @{items('For_each_VM_Event')?['Region']}<br>
+Status: @{items('For_each_VM_Event')?['Status']}<br>
+Duration: @{items('For_each_VM_Event')?['Duration']}<br>
+Trigger: @{items('For_each_VM_Event')?['TriggerType']}
+</p>
+<br>
+<p>
+Source Node: @{items('For_each_VM_Event')?['SourceNode']}<br>
+Destination Node: @{items('For_each_VM_Event')?['DestinationNode']}
+</p>"
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    },
+
+    "connectionReferences": {
+      "shared_kusto": {
+        "id": "/providers/Microsoft.PowerApps/apis/shared_kusto",
+        "connectionName": "shared_kusto",
+        "source": "Embedded"
+      },
+      "shared_teams": {
+        "id": "/providers/Microsoft.PowerApps/apis/shared_teams",
+        "connectionName": "shared_teams",
+        "source": "Embedded"
+      }
+    }
+  }
+}
