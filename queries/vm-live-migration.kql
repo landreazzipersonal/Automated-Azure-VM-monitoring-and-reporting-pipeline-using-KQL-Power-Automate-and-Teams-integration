@@ -1,0 +1,17 @@
+let startTime = ago(6h);
+let endTime = now();
+
+// Example dataset (replace with your environment)
+VMEvents
+| where TimeGenerated between (startTime .. endTime)
+| where EventType == "LiveMigration"
+| project
+    TimeGenerated,
+    VMName,
+    Region,
+    Status,
+    Duration,
+    TriggerType,
+    SourceNode,
+    DestinationNode
+| order by TimeGenerated desc
